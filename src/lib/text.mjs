@@ -27,7 +27,7 @@ export function canonicalUrl(value) {
   try {
     const url = new URL(value);
     for (const key of [...url.searchParams.keys()]) {
-      if (/^(utm_|source$|ref$|gh_src$)/i.test(key)) url.searchParams.delete(key);
+      if (/^(utm_.+|source|ref|gh_src)$/i.test(key)) url.searchParams.delete(key);
     }
     url.hash = '';
     return url.toString().replace(/\/$/, '');

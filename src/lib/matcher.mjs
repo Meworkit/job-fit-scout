@@ -66,6 +66,9 @@ function technicalConflict(job, config) {
 }
 
 export function hardFilter(job, config, historyIds = new Set(), now = Date.now()) {
+  if (job.verificationRejectedReason) {
+    return { accepted: false, reason: job.verificationRejectedReason };
+  }
   const title = normalized(job.title);
   if (!containsAny(title, config.allowed_title_phrases)) {
     return { accepted: false, reason: 'Unsupported role family' };
@@ -135,7 +138,8 @@ export function evaluateJob(job, config, cvText, filterContext) {
   );
 
   const concerns = [
-    job.preliminary ? 'Preliminary match from an aggregator summary; confirm the full employer posting' : null,
+    job.preliminary && job.officialUrl ? 'Official employer application found; full description not yet evaluated' : null,
+    job.preliminary && !job.officialUrl ? 'Preliminary match from an aggregator summary; exact employer application not yet verified' : null,
     filterContext.location.concern,
     filterContext.date.concern,
     domainMatches.length ? null : 'Preferred domain correspondence is limited',
@@ -147,6 +151,8 @@ export function evaluateJob(job, config, cvText, filterContext) {
     ...job,
     id: stableJobId(job),
     url: canonicalUrl(job.url),
+    officialUrl: canonicalUrl(job.officialUrl),
+    sourceUrl: canonicalUrl(job.sourceUrl),
     score: Math.min(10, score),
     category: job.preliminary ? 'Preliminary candidate' : score >= 8 ? 'Strong match' : 'Possible match',
     ageDays: filterContext.date.ageDays,

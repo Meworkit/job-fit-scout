@@ -8,6 +8,11 @@
     "location": "Toronto, Canada",
     "posted_at": "2026-07-30",
     "description": "Paste the complete official job description here."
+  },
+  {
+    "_help": "To suppress a closed, wrong-location, or falsely attributed aggregator result, set status to closed or invalid and explain why.",
+    "source_url": "https://aggregator.example/jobs/456",
+    "status": "invalid",
+    "reason": "The exact role could not be confirmed on the employer careers site."
   }
 ]
-

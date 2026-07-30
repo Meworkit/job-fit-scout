@@ -40,6 +40,7 @@ export async function fetchAdzuna(search) {
           location: cleanText(job.location?.display_name),
           postedAt: job.created ?? null,
           url: job.redirect_url,
+          sourceUrl: job.redirect_url,
           description: cleanText(job.description),
           preliminary: true
         });

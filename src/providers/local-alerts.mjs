@@ -34,6 +34,7 @@ function extractAnchors(contents, sourceFile) {
       location: '',
       postedAt: null,
       url,
+      sourceUrl: url,
       description: `Imported from local alert file ${sourceFile}.`,
       preliminary: true
     });
@@ -57,4 +58,3 @@ export async function fetchLocalAlerts(entry) {
   }
   return jobs;
 }
-

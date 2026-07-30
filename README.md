@@ -160,6 +160,17 @@ they remain clearly labeled as **Preliminary candidates** until the official
 full posting is available. The shortlist is ordered by exact posting time, with
 the freshest jobs first.
 
+The result table keeps two links separate:
+
+- **Apply on employer site** is shown only after the exact company, title, and
+  location have been matched to an employer-owned careers page.
+- **Discovery source** records where the candidate was originally found, such
+  as Adzuna.
+
+If an exact employer application cannot be verified, the table says
+**Official link not found** instead of presenting an aggregator link as an
+application link.
+
 ## Job sources
 
 Version 1 uses title-first Adzuna search plus public employer job-board

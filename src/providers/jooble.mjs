@@ -31,6 +31,7 @@ export async function fetchJooble(search) {
         location: cleanText(job.location),
         postedAt: job.updated ?? null,
         url: job.link,
+        sourceUrl: job.link,
         description: cleanText(job.snippet),
         preliminary: true
       })));

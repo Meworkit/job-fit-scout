@@ -114,6 +114,7 @@ test('keeps incomplete aggregator summaries as preliminary even below threshold'
       source: 'adzuna',
       sourceId: 'adz-1',
       url: 'https://www.adzuna.ca/details/1',
+      sourceUrl: 'https://www.adzuna.ca/details/1?utm_source=private-id',
       description: 'Short summary.',
       preliminary: true
     })
@@ -121,6 +122,7 @@ test('keeps incomplete aggregator summaries as preliminary even below threshold'
   assert.equal(result.accepted.length, 0);
   assert.equal(result.preliminary.length, 1);
   assert.equal(result.preliminary[0].category, 'Preliminary candidate');
+  assert.equal(result.preliminary[0].sourceUrl, 'https://www.adzuna.ca/details/1');
 });
 
 test('fills the configured result limit with ranked preliminary candidates', () => {

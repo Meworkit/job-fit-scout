@@ -1,0 +1,136 @@
+{
+  "_help": "Copy this file to config/user.json. That private file is ignored by Git.",
+  "cv_path": "private/cv.md",
+  "target_titles": [
+    "Senior Product Manager",
+    "Product Manager",
+    "Growth Product Manager",
+    "Digital Product Manager",
+    "AI Product Manager",
+    "Product Lead"
+  ],
+  "allowed_title_phrases": [
+    "product manager",
+    "product owner",
+    "product lead"
+  ],
+  "excluded_title_phrases": [
+    "junior",
+    "associate product manager",
+    "intern",
+    "internship",
+    "director",
+    "head of product",
+    "vice president",
+    "vp product",
+    "chief product",
+    "principal product",
+    "staff product",
+    "group product"
+  ],
+  "location": {
+    "label": "Toronto, Greater Toronto Area, or remote within Canada",
+    "allowed_phrases": [
+      "toronto",
+      "greater toronto area",
+      "gta",
+      "ontario",
+      "canada"
+    ],
+    "blocked_phrases": [
+      "united states only",
+      "us only",
+      "usa only",
+      "europe only",
+      "uk only"
+    ],
+    "remote_must_include": [
+      "canada",
+      "canadian"
+    ]
+  },
+  "arrangements": [
+    "remote",
+    "hybrid",
+    "on-site"
+  ],
+  "preferred_domains": [
+    "artificial intelligence",
+    "generative ai",
+    "saas",
+    "consumer",
+    "education",
+    "edtech",
+    "travel",
+    "experiences",
+    "social connection",
+    "well-being",
+    "mental health",
+    "pets",
+    "creator economy",
+    "productivity"
+  ],
+  "excluded_domains": [
+    "gambling",
+    "casino",
+    "adult entertainment",
+    "crypto",
+    "cryptocurrency",
+    "blockchain",
+    "web3"
+  ],
+  "strong_capabilities": [
+    "product discovery",
+    "customer interviews",
+    "user research",
+    "jobs to be done",
+    "jtbd",
+    "onboarding",
+    "activation",
+    "retention",
+    "product-led growth",
+    "growth",
+    "experimentation",
+    "a/b testing",
+    "0 to 1",
+    "zero to one",
+    "product-market fit",
+    "saas",
+    "consumer",
+    "ai product"
+  ],
+  "hard_technical_phrases": [
+    "machine learning engineer",
+    "ml engineer",
+    "deep learning research",
+    "distributed systems",
+    "network infrastructure",
+    "cybersecurity platform",
+    "advanced sql"
+  ],
+  "maximum_posting_age_days": 14,
+  "minimum_fit_score": 6.5,
+  "result_limit": 20,
+  "sources": {
+    "_help": "Add or remove public company boards. The slug is the final part of its Greenhouse, Lever, or Ashby board URL.",
+    "greenhouse": [
+      { "company": "Hootsuite", "slug": "hootsuite" },
+      { "company": "Later", "slug": "later" },
+      { "company": "AppDirect", "slug": "appdirect" },
+      { "company": "NMI", "slug": "nmi" },
+      { "company": "Redwood Software", "slug": "redwoodsoftware" },
+      { "company": "Guidepoint", "slug": "guidepoint" },
+      { "company": "Varicent", "slug": "varicent" },
+      { "company": "Knak", "slug": "knak" },
+      { "company": "Grafana Labs", "slug": "grafanalabs" },
+      { "company": "Earth Rated", "slug": "earthrated" },
+      { "company": "Apollo.io", "slug": "apolloio" },
+      { "company": "Mercury", "slug": "mercury" }
+    ],
+    "lever": [],
+    "ashby": [
+      { "company": "Cohere", "slug": "cohere" },
+      { "company": "Klue", "slug": "klue" }
+    ]
+  }
+}

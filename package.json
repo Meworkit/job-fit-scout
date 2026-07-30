@@ -1,0 +1,17 @@
+{
+  "name": "job-fit-scout",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Privacy-first CV-based job discovery and pre-evaluation",
+  "scripts": {
+    "setup": "node src/setup.mjs",
+    "search": "node src/index.mjs",
+    "search:dry": "node src/index.mjs --dry-run",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+

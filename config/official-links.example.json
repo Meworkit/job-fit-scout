@@ -1,0 +1,13 @@
+[
+  {
+    "_help": "Copy this file to private/official-links.json. Add an official employer URL and full job text for an aggregator result that needs verification.",
+    "source_url": "https://aggregator.example/jobs/123",
+    "company": "Example Company",
+    "title": "Senior Product Manager",
+    "official_url": "https://company.example/careers/jobs/123",
+    "location": "Toronto, Canada",
+    "posted_at": "2026-07-30",
+    "description": "Paste the complete official job description here."
+  }
+]
+

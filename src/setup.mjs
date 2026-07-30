@@ -12,6 +12,7 @@ async function exists(file) {
 
 await mkdir('config', { recursive: true });
 await mkdir('private', { recursive: true });
+await mkdir('private/alerts', { recursive: true });
 if (!(await exists('config/user.json'))) {
   await copyFile('config/user.example.json', 'config/user.json');
   console.log('✓ Created private configuration: config/user.json');
@@ -25,5 +26,9 @@ if (!(await exists('private/cv.md'))) {
   console.log('✓ Private CV found');
 }
 
-console.log('✓ Private files are excluded from Git');
+if (!(await exists('private/official-links.json'))) {
+  await copyFile('config/official-links.example.json', 'private/official-links.json');
+  console.log('✓ Created private official-link verification file');
+}
 
+console.log('✓ Private files are excluded from Git');

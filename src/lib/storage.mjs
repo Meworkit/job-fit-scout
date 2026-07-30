@@ -27,18 +27,12 @@ function safeMarkdown(value) {
   return String(value ?? '').replaceAll('|', '\\|').replaceAll('\n', ' ');
 }
 
-export async function writeResults(results, metadata) {
-  const header = [
-    '# Job Fit Scout results',
-    '',
-    `**Search date:** ${metadata.searchDate}`,
-    `**Filters:** ${metadata.filters}`,
-    `**Sources checked:** ${metadata.sourcesChecked}`,
-    '',
+function resultTable(results, emptyMessage) {
+  const rows = [
     '| Match | Company | Role | Location | Posted | Application link | Main fit evidence | Main concern |',
     '|---|---|---|---|---|---|---|---|'
   ];
-  const rows = results.map((job) => {
+  for (const job of results) {
     const posted = job.postedAt ? String(job.postedAt).slice(0, 10) : 'Unconfirmed';
     const values = [
       `${job.score}/10 — ${job.category}`,
@@ -46,14 +40,40 @@ export async function writeResults(results, metadata) {
       `[${safeMarkdown(job.title)}](${job.url})`,
       job.location || 'Unconfirmed',
       posted,
-      `[Apply](${job.url})`,
+      `[Open](${job.url})`,
       job.evidence.join(', '),
       job.concern
     ];
-    return `| ${values.map(safeMarkdown).join(' | ')} |`;
-  });
-  if (!rows.length) rows.push('| — | — | No qualifying new jobs found | — | — | — | — | — |');
-  await writeFile('output/job-search-latest.md', [...header, ...rows, ''].join('\n'));
+    rows.push(`| ${values.map(safeMarkdown).join(' | ')} |`);
+  }
+  if (!results.length) rows.push(`| — | — | ${emptyMessage} | — | — | — | — | — |`);
+  return rows;
+}
+
+export async function writeResults(results, verified, preliminary, metadata) {
+  const funnel = metadata.funnel ?? {};
+  const header = [
+    '# Job Fit Scout results',
+    '',
+    `**Search date:** ${metadata.searchDate}`,
+    `**Filters:** ${metadata.filters}`,
+    `**Sources checked:** ${metadata.sourcesChecked} (${metadata.sourcesConfigured ?? metadata.sourcesChecked} configured; ${metadata.sourcesSkipped ?? 0} skipped)`,
+    '',
+    '## Search funnel',
+    '',
+    `Discovered ${funnel.discovered ?? metadata.discoveredCount} listings → ${funnel.productRoleCandidates ?? '—'} product-role candidates → ${funnel.uniqueCandidates ?? '—'} unique compatible candidates → ${funnel.verifiedMatches ?? metadata.verifiedCount ?? verified.length} verified + ${funnel.preliminaryCandidates ?? metadata.preliminaryCount ?? preliminary.length} preliminary candidates → ${results.length} shortlisted.`,
+    '',
+    '## Shortlist — freshest first',
+    '',
+    'A **Strong/Possible match** uses the complete employer posting. A **Preliminary candidate** passed the hard rules, but its aggregator or alert summary is incomplete and must be confirmed on the employer page.',
+    ''
+  ];
+  const document = [
+    ...header,
+    ...resultTable(results, 'No suitable new matches'),
+    ''
+  ];
+  await writeFile('output/job-search-latest.md', document.join('\n'));
 
   const csvHeader = ['Match', 'Category', 'Company', 'Role', 'Location', 'Posted', 'Application link', 'Main fit evidence', 'Main concern'];
   const csvRows = results.map((job) => [
@@ -68,6 +88,12 @@ export async function writeResults(results, metadata) {
     job.concern
   ]);
   await writeFile('output/job-search-latest.csv', [csvHeader, ...csvRows].map((row) => row.map(csvCell).join(',')).join('\n') + '\n');
+  await writeFile('output/job-search-latest.json', JSON.stringify({
+    metadata,
+    results,
+    verified,
+    preliminary
+  }, null, 2) + '\n');
 }
 
 export async function writeRejected(rejected, searchDate) {
@@ -86,4 +112,3 @@ export async function updateHistory(historyPath, existing, results, searchDate) 
 export function absoluteFromProject(relativePath) {
   return path.resolve(process.cwd(), relativePath);
 }
-

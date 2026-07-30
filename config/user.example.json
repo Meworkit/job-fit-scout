@@ -79,6 +79,11 @@
     "blockchain",
     "web3"
   ],
+  "excluded_companies": [
+    "Localcoin",
+    "Rivalry",
+    "Equest"
+  ],
   "strong_capabilities": [
     "product discovery",
     "customer interviews",
@@ -108,11 +113,55 @@
     "cybersecurity platform",
     "advanced sql"
   ],
-  "maximum_posting_age_days": 14,
+  "preferred_posting_age_days": 14,
+  "maximum_posting_age_days": 20,
+  "minimum_result_target": 15,
   "minimum_fit_score": 6.5,
   "result_limit": 20,
   "sources": {
-    "_help": "Add or remove public company boards. The slug is the final part of its Greenhouse, Lever, or Ashby board URL.",
+    "_help": "Adzuna searches titles first. Company boards supplement it with official ATS listings.",
+    "adzuna": [
+      {
+        "name": "Adzuna Toronto product roles",
+        "country": "ca",
+        "location": "Toronto",
+        "queries": ["Product Manager", "Product Owner", "Product Lead"],
+        "results_per_page": 50,
+        "pages": 2,
+        "maximum_posting_age_days": 20
+      },
+      {
+        "name": "Adzuna Canada product roles",
+        "country": "ca",
+        "location": "Canada",
+        "queries": ["Product Manager", "Product Owner", "Product Lead"],
+        "results_per_page": 50,
+        "pages": 2,
+        "maximum_posting_age_days": 20
+      }
+    ],
+    "jooble": [
+      {
+        "name": "Jooble Toronto product roles",
+        "requires_env": "JOOBLE_API_KEY",
+        "location": "Toronto",
+        "queries": ["Product Manager", "Product Owner", "Product Lead"],
+        "pages": 2
+      },
+      {
+        "name": "Jooble Canada product roles",
+        "requires_env": "JOOBLE_API_KEY",
+        "location": "Canada",
+        "queries": ["Product Manager", "Product Owner", "Product Lead"],
+        "pages": 2
+      }
+    ],
+    "alerts": [
+      {
+        "name": "Local job-alert inbox",
+        "directory": "private/alerts"
+      }
+    ],
     "greenhouse": [
       { "company": "Hootsuite", "slug": "hootsuite" },
       { "company": "Later", "slug": "later" },

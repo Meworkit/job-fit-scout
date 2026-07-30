@@ -44,7 +44,15 @@ function dateDecision(job, config, now) {
     return { compatible: false, score: 0, ageDays, reason: `Posted ${ageDays} days ago` };
   }
   const freshness = Math.max(0, 1 - ageDays / config.maximum_posting_age_days);
-  return { compatible: true, score: 0.2 + freshness * 0.3, ageDays };
+  const extended = Number.isFinite(config.preferred_posting_age_days) &&
+    ageDays > config.preferred_posting_age_days;
+  return {
+    compatible: true,
+    score: 0.2 + freshness * 0.3,
+    ageDays,
+    extended,
+    concern: extended ? `Extended freshness window: posted ${ageDays} days ago` : null
+  };
 }
 
 function technicalConflict(job, config) {
@@ -65,6 +73,9 @@ export function hardFilter(job, config, historyIds = new Set(), now = Date.now()
   if (containsAny(title, config.excluded_title_phrases)) {
     return { accepted: false, reason: 'Seniority or title is outside the configured range' };
   }
+  if (containsAny(job.company, config.excluded_companies ?? [])) {
+    return { accepted: false, reason: 'Excluded company or known excluded domain' };
+  }
 
   const completeText = `${job.title} ${job.company} ${job.description}`;
   if (containsAny(completeText, config.excluded_domains)) {
@@ -82,7 +93,6 @@ export function hardFilter(job, config, historyIds = new Set(), now = Date.now()
 
   if (!canonicalUrl(job.url)) return { accepted: false, reason: 'Missing credible application route' };
   if (historyIds.has(stableJobId(job))) return { accepted: false, reason: 'Previously shown job' };
-
   return { accepted: true, location, date };
 }
 
@@ -125,6 +135,7 @@ export function evaluateJob(job, config, cvText, filterContext) {
   );
 
   const concerns = [
+    job.preliminary ? 'Preliminary match from an aggregator summary; confirm the full employer posting' : null,
     filterContext.location.concern,
     filterContext.date.concern,
     domainMatches.length ? null : 'Preferred domain correspondence is limited',
@@ -137,43 +148,140 @@ export function evaluateJob(job, config, cvText, filterContext) {
     id: stableJobId(job),
     url: canonicalUrl(job.url),
     score: Math.min(10, score),
-    category: score >= 8 ? 'Strong match' : 'Possible match',
+    category: job.preliminary ? 'Preliminary candidate' : score >= 8 ? 'Strong match' : 'Possible match',
     ageDays: filterContext.date.ageDays,
     evidence: evidence.length ? evidence : ['Product-management role family'],
     concern: concerns[0] ?? 'No major concern identified'
   };
 }
 
-export function assessJobs(jobs, config, cvText, historyIds = new Set(), now = Date.now()) {
-  const accepted = [];
-  const rejected = [];
-  const seenThisRun = new Set();
+function tokenSet(value) {
+  return new Set(normalized(value).split(/[^a-z0-9]+/).filter((token) => token.length > 2));
+}
 
-  for (const job of jobs) {
+function jaccard(left, right) {
+  const a = tokenSet(left);
+  const b = tokenSet(right);
+  if (!a.size || !b.size) return 0;
+  let intersection = 0;
+  for (const token of a) if (b.has(token)) intersection += 1;
+  return intersection / (a.size + b.size - intersection);
+}
+
+function isDuplicate(job, existing) {
+  const id = stableJobId(job);
+  const url = canonicalUrl(job.url);
+  return existing.some((candidate) => {
+    if (stableJobId(candidate) === id) return true;
+    if (url && canonicalUrl(candidate.url) === url) return true;
+    const sameCompany = normalized(candidate.company) === normalized(job.company);
+    const sameTitle = normalized(candidate.title) === normalized(job.title);
+    if (!sameCompany || !sameTitle) return false;
+    const sameLocation = normalized(candidate.location) === normalized(job.location);
+    return sameLocation || jaccard(candidate.description, job.description) >= 0.65;
+  });
+}
+
+export function compareFreshness(left, right) {
+  const leftTimestamp = parseDate(left.postedAt);
+  const rightTimestamp = parseDate(right.postedAt);
+  if (leftTimestamp !== null && rightTimestamp !== null && leftTimestamp !== rightTimestamp) {
+    return rightTimestamp - leftTimestamp;
+  }
+  if (leftTimestamp !== null && rightTimestamp === null) return -1;
+  if (leftTimestamp === null && rightTimestamp !== null) return 1;
+  const leftAge = left.ageDays ?? Number.POSITIVE_INFINITY;
+  const rightAge = right.ageDays ?? Number.POSITIVE_INFINITY;
+  return leftAge - rightAge ||
+    Number(Boolean(left.preliminary)) - Number(Boolean(right.preliminary)) ||
+    right.score - left.score;
+}
+
+function rejectionGroup(reason) {
+  if (/location|remote role/i.test(reason)) return 'location';
+  if (/posted \d+ days/i.test(reason)) return 'postingAge';
+  if (/duplicate/i.test(reason)) return 'duplicates';
+  if (/previously shown/i.test(reason)) return 'previouslyShown';
+  if (/seniority/i.test(reason)) return 'seniority';
+  if (/role family/i.test(reason)) return 'roleFamily';
+  if (/excluded domain/i.test(reason)) return 'excludedDomain';
+  if (/excluded company/i.test(reason)) return 'excludedDomain';
+  if (/technical/i.test(reason)) return 'technical';
+  if (/fit score/i.test(reason)) return 'belowScore';
+  return 'other';
+}
+
+export function assessJobs(jobs, config, cvText, historyIds = new Set(), now = Date.now()) {
+  const verified = [];
+  const preliminary = [];
+  const rejected = [];
+  const retainedCandidates = [];
+  const funnel = {
+    discovered: jobs.length,
+    productRoleCandidates: 0,
+    uniqueCandidates: 0,
+    hardCompatible: 0,
+    verifiedEvaluated: 0,
+    verifiedMatches: 0,
+    preliminaryCandidates: 0,
+    rejectedByReason: {}
+  };
+
+  const officialFirst = [...jobs].sort((a, b) => Number(Boolean(a.preliminary)) - Number(Boolean(b.preliminary)));
+  for (const job of officialFirst) {
+    if (containsAny(job.title, config.allowed_title_phrases)) funnel.productRoleCandidates += 1;
     const id = stableJobId(job);
-    if (seenThisRun.has(id)) {
-      rejected.push({ ...job, id, reason: 'Duplicate within this search' });
-      continue;
-    }
-    seenThisRun.add(id);
 
     const filter = hardFilter(job, config, historyIds, now);
     if (!filter.accepted) {
       rejected.push({ ...job, id, reason: filter.reason });
+      const group = rejectionGroup(filter.reason);
+      funnel.rejectedByReason[group] = (funnel.rejectedByReason[group] ?? 0) + 1;
       continue;
     }
+    if (isDuplicate(job, retainedCandidates)) {
+      rejected.push({ ...job, id, reason: 'Duplicate within this search' });
+      funnel.rejectedByReason.duplicates = (funnel.rejectedByReason.duplicates ?? 0) + 1;
+      continue;
+    }
+    retainedCandidates.push(job);
+    funnel.uniqueCandidates += 1;
+    funnel.hardCompatible += 1;
 
     const evaluated = evaluateJob(job, config, cvText, filter);
-    if (evaluated.score < config.minimum_fit_score) {
+    if (job.preliminary) {
+      preliminary.push(evaluated);
+      funnel.preliminaryCandidates += 1;
+    } else if (evaluated.score < config.minimum_fit_score) {
       rejected.push({ ...evaluated, reason: `Fit score ${evaluated.score} is below ${config.minimum_fit_score}` });
+      funnel.rejectedByReason.belowScore = (funnel.rejectedByReason.belowScore ?? 0) + 1;
     } else if (evaluated.ageDays === null && evaluated.score < 8) {
       rejected.push({ ...evaluated, reason: 'Unconfirmed date and not a strong match' });
+      funnel.rejectedByReason.other = (funnel.rejectedByReason.other ?? 0) + 1;
     } else {
-      accepted.push(evaluated);
+      verified.push(evaluated);
+      funnel.verifiedMatches += 1;
     }
+    if (!job.preliminary) funnel.verifiedEvaluated += 1;
   }
 
-  accepted.sort((a, b) => b.score - a.score || (a.ageDays ?? 999) - (b.ageDays ?? 999));
-  return { accepted: accepted.slice(0, config.result_limit), rejected };
+  verified.sort((a, b) => b.score - a.score || (a.ageDays ?? 999) - (b.ageDays ?? 999));
+  preliminary.sort(compareFreshness);
+  const preferredAge = config.preferred_posting_age_days ?? config.maximum_posting_age_days;
+  const primary = verified.filter((job) => job.ageDays === null || job.ageDays <= preferredAge);
+  const extended = verified.filter((job) => job.ageDays !== null && job.ageDays > preferredAge);
+  const target = Math.min(config.result_limit, config.minimum_result_target ?? config.result_limit);
+  const selectedVerified = primary.slice(0, config.result_limit);
+  if (selectedVerified.length < target) {
+    selectedVerified.push(...extended.slice(0, target - selectedVerified.length));
+  }
+  const preliminarySpaces = Math.max(0, config.result_limit - selectedVerified.length);
+  const selectedPreliminary = preliminary.slice(0, preliminarySpaces);
+  return {
+    accepted: selectedVerified,
+    verified: selectedVerified,
+    preliminary: selectedPreliminary,
+    rejected,
+    funnel
+  };
 }
-

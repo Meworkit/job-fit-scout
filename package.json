@@ -6,6 +6,8 @@
   "description": "Privacy-first CV-based job discovery and pre-evaluation",
   "scripts": {
     "setup": "node src/setup.mjs",
+    "configure:adzuna": "node src/configure-adzuna.mjs",
+    "configure:jooble": "node src/configure-jooble.mjs",
     "search": "node src/index.mjs",
     "search:dry": "node src/index.mjs --dry-run",
     "test": "node --test"
@@ -14,4 +16,3 @@
     "node": ">=20"
   }
 }
-

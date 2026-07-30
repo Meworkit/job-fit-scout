@@ -41,3 +41,6 @@ export function stableJobId(job) {
   return canonicalUrl(job.url) || `${normalized(job.company)}::${normalized(job.title)}`;
 }
 
+export function stableRoleKey(job) {
+  return `${normalized(job.company)}::${normalized(job.title)}`;
+}

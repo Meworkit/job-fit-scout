@@ -66,8 +66,50 @@ Open `config/user.json`. The most commonly changed settings are:
 - `sources`
 
 The default settings search Toronto, the Greater Toronto Area, and remote roles
-explicitly open to Canada; accept postings up to 14 days old; and return up to
-20 results.
+explicitly open to Canada. It prefers postings up to 14 days old and uses days
+15–20 only when fewer than 15 suitable jobs are available.
+
+### 5. Connect title-first Adzuna discovery
+
+Create an Adzuna developer application, then run:
+
+```text
+npm run configure:adzuna
+```
+
+Enter the Application ID and regenerated Application Key directly in Terminal.
+The key is hidden while typing and saved only in `.env`, which Git excludes.
+Never paste an API key into chat or commit it to GitHub.
+
+### 6. Optionally connect Jooble
+
+Create a Jooble API key, then run:
+
+```text
+npm run configure:jooble
+```
+
+The key is hidden while typing and saved beside the Adzuna credentials in the
+private `.env` file. Searches continue normally when Jooble is not configured.
+
+### 7. Add links from job alerts
+
+Save LinkedIn, Indeed, Glassdoor, Wellfound, or other job-alert emails as
+`.eml`, `.html`, or `.txt` files inside:
+
+```text
+private/alerts/
+```
+
+Job Fit Scout reads Product Manager-family links from these local files. It
+does not sign in to or automate those services.
+
+### 8. Verify an aggregator candidate
+
+Copy `config/official-links.example.json` to
+`private/official-links.json`. For an Adzuna or Jooble candidate, add the
+official employer URL and full job description. On the next search, Job Fit
+Scout evaluates that complete posting as a verified candidate.
 
 ## Running a search
 
@@ -101,7 +143,7 @@ The tool first applies hard rules:
 - Valid application URL
 - Not a duplicate or previously shown job
 
-Remaining jobs receive a transparent score from 0 to 10 based on:
+Remaining complete jobs receive a transparent score from 0 to 10 based on:
 
 - Role-family fit: 25%
 - Responsibility correspondence: 25%
@@ -113,11 +155,18 @@ Remaining jobs receive a transparent score from 0 to 10 based on:
 
 Domain preferences and ordinary skill gaps change ranking rather than
 automatically rejecting a job. A hard conflict always overrides the score.
+Incomplete aggregator or alert summaries are never rejected for a low score;
+they remain clearly labeled as **Preliminary candidates** until the official
+full posting is available. The shortlist is ordered by exact posting time, with
+the freshest jobs first.
 
 ## Job sources
 
-Version 1 uses public job-board interfaces:
+Version 1 uses title-first Adzuna search plus public employer job-board
+interfaces:
 
+- Adzuna
+- Jooble (optional)
 - Greenhouse
 - Lever
 - Ashby
@@ -138,11 +187,11 @@ npm test
 ```
 
 Tests cover title filtering, seniority, Canadian location rules, posting age,
-scoring, history and duplicate detection.
+scoring, history, duplicate detection, Adzuna, Jooble, saved alerts, and
+official-posting enrichment.
 
 ## Important limitation
 
 The score is a transparent screening aid, not a hiring probability. Public job
 data can be incomplete, and an employer may change or close a listing between
 searches. Always confirm important details on the application page.
-
